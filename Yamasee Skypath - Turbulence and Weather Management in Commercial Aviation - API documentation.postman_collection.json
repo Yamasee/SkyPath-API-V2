@@ -2019,7 +2019,7 @@
 		{
 			"id": "baseUrl",
 			"key": "baseUrl",
-			"value": "https://devserver.yamasee-skypath.com",
+			"value": "https://dev-api.skypath.io",
 			"type": "string"
 		}
 	],
