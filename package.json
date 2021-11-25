@@ -1,0 +1,22 @@
+{
+  "scripts": {
+    "start": "redoc-cli serve --watch",
+    "bundle": "redoc-cli bundle ./spec/skypath.yml --output index.html",
+    "reload": "http-server",
+    "watch": "watch \"npm run bundle\" ./spec",
+    "api-doc": "concurrently \"npm run watch\" \"npm run reload\""
+  },
+  "dependencies": {
+    "async": "^3.1.0",
+    "redoc": "^2.0.0-rc.18",
+    "speccy": "^0.11.0",
+    "swagger-cli": "^4.0.4"
+  },
+  "devDependencies": {
+    "concurrently": "^5.3.0",
+    "http-server": "^0.12.3",
+    "live-server": "^1.2.1",
+    "redoc-cli": "^0.10.2",
+    "watch": "^1.0.2"
+  }
+}

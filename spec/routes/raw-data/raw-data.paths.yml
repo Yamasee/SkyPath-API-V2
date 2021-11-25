@@ -1,0 +1,133 @@
+RawData:
+  SensorData:
+    post:
+      operationId: raw-data-sensor-data
+      description: Upload file with raw data from device to S3 bucket and save meta data in db
+      parameters:
+        - $ref: "../../core/headers.yml#/skypathSDK"
+        - $ref: "../../core/headers.yml#/skypathApp"
+      security:
+        - bearerAuth: []
+      tags:
+        - raw_data
+      requestBody:
+        $ref: "./raw-data.requests.yml#/RawDataSensorDataRequestBody"
+      responses:
+        200:
+          $ref: "./raw-data.responses.yml#/RawDataSensorDataResponse"
+        401:
+          $ref: "../../responses.yml#/UnauthorizedSettings"
+  SensorDataById:
+    get:
+      operationId: raw-data-sensor-data-by-id
+      description: Return uploaded raw data sensor data file from S3
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "../../core/headers.yml#/skypathSDK"
+        - $ref: "../../core/headers.yml#/skypathApp"
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The raw-data-sensor-data ID
+          example: edfa48d2-06e0-4bce-8c94-fd7147d9cac6
+      tags:
+        - raw_data
+      responses:
+        200:
+          description: OK - get file
+        401:
+          $ref: "../../responses.yml#/UnauthorizedSettings"
+        404:
+          $ref: "../../responses.yml#/NotFound"
+  Metadata:
+    get:
+      operationId: raw-data-metadata
+      description: Get metadata. Use parameters to specify results
+      security:
+        - bearerAuth: []
+      tags:
+        - raw_data
+      parameters:
+        - $ref: "../../core/headers.yml#/skypathSDK"
+        - $ref: "../../core/headers.yml#/skypathApp"
+        - in: query
+          name: limit
+          schema:
+            type: number
+            default: 0
+        - in: query
+          name: page
+          schema:
+            type: number
+            default: 1
+        - in: query
+          name: user_id
+          schema:
+            type: string
+          description: Return files created by provided user
+        - in: query
+          name: from_date
+          schema:
+            type: number
+          description: Return files created after provided timestamp
+        - in: query
+          name: to_date
+          schema:
+            type: number
+          description: Return files created before provided timestamp
+        - in: query
+          name: start_ts
+          schema:
+            type: number
+          description: Return files with start_ts after provided timestamp
+        - in: query
+          name: end_ts
+          schema:
+            type: number
+          description: Return files with end_ts before provided timestamp
+        - in: query
+          name: label
+          schema:
+            type: string
+          description: Free text search on label property
+        - in: query
+          name: flight_num
+          schema:
+            type: string
+          description: Return metadata for specific flight number
+      responses:
+        200:
+          $ref: "./raw-data.responses.yml#/RawDataMetadataResponse"
+        401:
+          $ref: "../../responses.yml#/UnauthorizedSettings"
+        404:
+          $ref: "../../responses.yml#/NotFound"
+  MetadataById:
+    get:
+      operationId: raw-data-metadata-by-id
+      description: Get metadata by id
+      security:
+        - bearerAuth: []
+      tags:
+        - raw_data
+      parameters:
+        - $ref: "../../core/headers.yml#/skypathSDK"
+        - $ref: "../../core/headers.yml#/skypathApp"
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The raw-data-metadata ID
+      responses:
+        200:
+          $ref: "./raw-data.responses.yml#/RawDataMetadataByIdResponse"
+        401:
+          $ref: "../../responses.yml#/UnauthorizedSettings"
+        404:
+          $ref: "../../responses.yml#/NotFound"

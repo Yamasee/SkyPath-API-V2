@@ -1,0 +1,52 @@
+RawDataSensorDataResponse:
+  description: Raw data successfully created
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/objects/Metadata"
+
+RawDataMetadataResponse:
+  description: Metadata objects with pagination properties
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: "#/components/objects/Metadata"
+          totalPages:
+            type: number
+          currentPage:
+            type: number
+
+RawDataMetadataByIdResponse:
+  description: Metadata object
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/objects/Metadata"
+
+components:
+  objects:
+    Metadata:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 5fd26ee27e6055034d8ae13d
+        uuid:
+          type: string
+          example: b553d55f-a94d-4df6-b04b-393f6fb0e08c
+        user_id:
+          type: string
+          example: userId
+        url:
+          type: string
+          example: "{server-url}/v2/raw-data/sensor_data/b553d55f-a94d-4df6-b04b-393f6fb0e08c"
+        uploaded:
+          type: number
+          example: 1607626466074
+        metadata:
+          $ref: "../../types/metadata.type.yml#/Metadata"

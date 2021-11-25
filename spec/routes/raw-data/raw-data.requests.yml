@@ -1,0 +1,12 @@
+RawDataSensorDataRequestBody:
+  description: Options for request
+  content:
+    multipart/form-data:
+      schema:
+        description: Actual file upload
+        properties:
+          file:
+            type: string
+            format: binary
+          metadata:
+            $ref: "../../types/metadata.type.yml#/Metadata"

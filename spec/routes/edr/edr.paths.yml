@@ -1,0 +1,17 @@
+Edr:
+  Stats:
+    get:
+      operationId: edr
+      description: Get edr stats for last 24h and 1h
+      tags:
+        - edr
+      parameters:
+        - $ref: "../../core/headers.yml#/skypathSDK"
+        - $ref: "../../core/headers.yml#/skypathApp"
+      responses:
+        200:
+          $ref: "./edr.responses.yml#/EdrStatsResponse"
+        401:
+          $ref: "../../responses.yml#/UnauthorizedSettings"
+        404:
+          $ref: "../../responses.yml#/NotFound"

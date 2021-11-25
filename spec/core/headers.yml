@@ -1,0 +1,15 @@
+skypathSDK:
+  in: header
+  name: X-Skypath-SDK
+  required: false
+  schema:
+    type: string
+  description: Version of sdk
+  
+skypathApp:
+  in: header
+  name: X-Skypath-App
+  required: false
+  schema:
+    type: string
+  description: Version of application

@@ -1,0 +1,22 @@
+EdrStatsResponse:
+  description: Edr data stats
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/objects/EdrStats"
+
+components:
+  objects:
+    EdrStats:
+      type: object
+      properties:
+        timeStamp:
+          type: number
+          example: 1607668194
+        24h:
+          type: number
+          example: 5000
+        1h:
+          type: number
+          example: 100
+      

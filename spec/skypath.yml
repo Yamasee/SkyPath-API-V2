@@ -1,0 +1,1050 @@
+openapi: "3.0.0"
+info:
+  $ref: "info.yml#/info"
+
+servers:
+  - url: https://devserver.yamasee-skypath.com
+    description: Development Server
+  - url: https://server.yamasee-skypath.com
+    description: Production Server
+
+tags:
+  - name: registration
+    description: These routes are public and return user information for new users
+  - name: general
+    description: These routes are public and return general information about the system like supported aircraft types and server / client recommended versions
+  - name: auth
+    description: These routes allow authentication, Login with API key, Refresh JWT tokens
+  - name: settings
+    description: These routes allow getting the user recommended settings
+  - name: static_content
+    description: These routes allow getting and updating system wide static content like airports and FIR data
+  - name: map
+    description: These routes deal with getting and updating the logical map view of aircraft positions and turbulence reports
+  - name: raw_data
+    description: These routes allow getting and updating raw data from devices and metadata entries
+  - name: proxy
+    description: Proxy endpoint for other domains
+  - name: edr
+    description: Edr
+paths:
+  /v2/raw-data/sensor-data:
+    $ref: "./routes/raw-data/raw-data.paths.yml#/RawData/SensorData"
+  /v2/raw-data/sensor-data/{id}:
+    $ref: "./routes/raw-data/raw-data.paths.yml#/RawData/SensorDataById"
+  /v2/raw-data/metadata:
+    $ref: "./routes/raw-data/raw-data.paths.yml#/RawData/Metadata"
+  /v2/raw-data/metadata/{id}:
+    $ref: "./routes/raw-data/raw-data.paths.yml#/RawData/MetadataById"
+  /v2/edr/stats:
+    $ref: "./routes/edr/edr.paths.yml#/Edr/Stats"
+  /v2/proxy:
+    post:
+      operationId: proxy
+      description: Proxy to specified url
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      security:
+        - bearerAuth: []
+      tags:
+        - proxy
+      requestBody:
+        description: Options for request
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProxyRequest"
+      responses:
+        200:
+          description: OK - proxy success
+        401:
+          $ref: "responses.yml#/UnauthorizedSettings"
+
+  /v2/static_content/{unique_id}/{sha1}:
+    post:
+      operationId: create_static_content
+      description: Create Static content by uploading a file
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      security:
+        - bearerAuth: []
+      tags:
+        - static_content
+      requestBody:
+        description: The user contact request
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateStaticContentRequest"
+      responses:
+        200:
+          description: OK - content created
+        401:
+          $ref: "responses.yml#/UnauthorizedSettings"
+
+  /v2/static_contents:
+    get:
+      operationId: list_static_contents
+      description: Return a list of available static content
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      security:
+        - bearerAuth: []
+      tags:
+        - static_content
+      responses:
+        200:
+          description: A valid list of static content
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/StaticContentListResponse"
+        401:
+          $ref: "responses.yml#/UnauthorizedSettings"
+
+  /v2/static_content/{uid}:
+    get:
+      operationId: get_static_content
+      description: Return the actual static content file
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      tags:
+        - static_content
+      responses:
+        200:
+          description: The static contents
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+        401:
+          $ref: "responses.yml#/UnauthorizedSettings"
+
+  /v2/contact:
+    post:
+      operationId: contact
+      description: Used to send user contact us / feedback form
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      tags:
+        - general
+      requestBody:
+        description: The user contact request
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactRequest"
+      responses:
+        200:
+          description: OK - message sent
+
+  /v2/forgot_password:
+    post:
+      operationId: forgot_password
+      description: Used to request a password reset link for a user
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      tags:
+        - auth
+      requestBody:
+        description: User id param
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordRequest"
+      responses:
+        200:
+          description: OK - Password reset link was sent to registered email
+        404:
+          $ref: "responses.yml#/UserNotFound"
+
+  /v2/set_user_profile:
+    post:
+      tags:
+        - registration
+      operationId: set_user_profile
+      description: |
+        Client can set user profile like password and other future properties for non init users, 
+        if user is not a new user the operation will fail with not authorized code.
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      requestBody:
+        description: User profile params
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileUpdateRequest"
+      responses:
+        200:
+          description: OK - Updates were recived by the server
+        401:
+          $ref: "responses.yml#/UnauthorizedAlreadyInit"
+        404:
+          $ref: "responses.yml#/UserNotFound"
+        500:
+          $ref: "responses.yml#/InternalServerError"
+
+  /v2/aircraft_types:
+    get:
+      operationId: aircraft_types
+      description: Returns a list of system supported aircraft types
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      tags:
+        - general
+      responses:
+        200:
+          description: A valid list of system supported aircraft types
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/AircraftTypesResponse"
+
+  /v2/settings:
+    get:
+      operationId: settings
+      description: Get the initial recommended settings for this user
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      tags:
+        - settings
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: An object with the user's settings for each module
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/SettingsResponse"
+        401:
+          $ref: "responses.yml#/UnauthorizedSettings"
+        404:
+          $ref: "responses.yml#/NotFound"
+
+  /v2/hello:
+    get:
+      tags:
+        - general
+      operationId: hello
+      description: |
+        Gets basic information about Skypath server version and minimal client version needed, 
+        if the app version is lower than the minimal allowed app version the client needs to
+        block logging-in and suggest the user to upgrade the Skypath app version on the device.
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/HelloResponse"
+
+  /v2/login:
+    post:
+      tags:
+        - auth
+      operationId: login
+      description: |
+        Login to the server and get a authorization JWT token, this allows user to 
+        exchange their username / email and password for a JWT token which can be user in 
+        further requests. All requests that need this token are marked as such in this
+        documentation
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      requestBody:
+        description: Login params
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        200:
+          description: OK - User was authenticated
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "types.yml#/LoginResponse"
+                  - $ref: "types.yml#/LoginOTPResponse"
+                  - $ref: "types.yml#/LoginSSOResponse"
+        401:
+          $ref: "responses.yml#/Unauthorized"
+
+  /v2/otp_request:
+    post:
+      tags:
+        - auth
+      operationId: otp_request
+      description: Request a new OTP code for uninitialized user
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      requestBody:
+        description: OTP request params
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OTPRequest"
+      responses:
+        200:
+          description: OK - OTP sent
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/OTPRequestResponse"
+        401:
+          $ref: "responses.yml#/Unauthorized"
+
+  /v2/otp_validate:
+    post:
+      tags:
+        - auth
+      operationId: otp_validate
+      description: Validate OTP code
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      requestBody:
+        description: OTP validation params
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OTPValidationRequest"
+      responses:
+        200:
+          description: OK - OTP code is valid
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/OTPValidationResponse"
+        401:
+          $ref: "responses.yml#/Unauthorized"
+
+  /v2/partner_login:
+    post:
+      tags:
+        - auth
+      operationId: partner_login
+      description: |
+        Login to the server and get a authorization JWT token, this allows partners to 
+        exchange their API_KEY and customer user_id for a JWT token which can be user in 
+        further requests. All requests that need this token are marked as such in this
+        documentation
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      security:
+        - apiKey: []
+      requestBody:
+        description: Login params
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerLoginRequest"
+      responses:
+        200:
+          description: OK - User was authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/LoginResponse"
+        401:
+          $ref: "responses.yml#/Unauthorized"
+        404:
+          $ref: "responses.yml#/UserNotFound"
+        500:
+          $ref: "responses.yml#/InternalServerError"
+
+  /v2/refresh_token:
+    post:
+      operationId: refresh_token
+      tags:
+        - auth
+      description: |
+        Each recived JWT token when using login has an expiry time of 3 hours, when the client
+        gets an error the token expired or even before the event of the token expiring, 
+        the client can call this route with the correct refresh token recived on the login route
+        and get new fresh JWT token.
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      responses:
+        200:
+          description: OK - new token generated
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/RefreshTokenResponse"
+        401:
+          $ref: "responses.yml#/InvalidRefreshToken"
+        404:
+          $ref: "responses.yml#/NotFound"
+        500:
+          $ref: "responses.yml#/InternalServerError"
+
+      requestBody:
+        description: JWT refresh token
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - user_id
+              properties:
+                user_id:
+                  type: string
+                  description: The user_id or the requesting user
+                token:
+                  type: string
+                  description: The refresh token the client recived on login
+
+  /v2/partner_refresh_token:
+    post:
+      operationId: partner_refresh_token
+      tags:
+        - auth
+      security:
+        - apiKey: []
+      description: |
+        The recived JWT token when using partner login has an expiry time of 3 hours, when the client
+        gets an error the token expired or even before the event of the token expiring, 
+        the client can call this route with the correct refresh token recived on the login route
+        and get new fresh JWT token. Only good for refreshing tokens recived with partner_login
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      responses:
+        200:
+          description: OK - new token generated
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/RefreshTokenResponse"
+        401:
+          $ref: "responses.yml#/InvalidRefreshToken"
+        404:
+          $ref: "responses.yml#/NotFound"
+        500:
+          $ref: "responses.yml#/InternalServerError"
+
+      requestBody:
+        description: JWT refresh partner token
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartnerRefreshTokenRequest"
+
+  /v2/delivery_token:
+    get:
+      tags:
+        - map
+      security:
+        - bearerAuth: []
+      operationId: delivery_token
+      description: |
+        The client needs to call this to get a valid CDN delivery key to be able
+        to get initial state and periodic updates or the world map
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      responses:
+        200:
+          description: OK - returns a valid delivery key
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/DeliveryKeyResponse"
+        401:
+          $ref: "responses.yml#/Unauthorized"
+        404:
+          $ref: "responses.yml#/NotFound"
+        500:
+          $ref: "responses.yml#/InternalServerError"
+
+  ? /v2/initial/{company_id}/{aircraft_type}/{hours}/{delivery_token}/{delivery_token_expiry}
+  : get:
+      tags:
+        - map
+      operationId: initial
+      description: |
+        Get an initial world view of the turbulence and traffic of all aircrafts according 
+        to the user permissions, client or app should call this when initializing of after 
+        a period of no connectivity (max 5 minutes) to re-init it's internal memory to the 
+        current state. When network connectivity is stable the app should call the /update 
+        routes to get only the diff from the last update every minute or so.
+
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+        - in: path
+          name: company_id
+          schema:
+            type: string
+          required: true
+          description: Internal Company Id
+        - in: path
+          name: aircraft_type
+          schema:
+            type: string
+          required: true
+          description: Type of aircraft client is flying
+        - in: path
+          name: hours
+          schema:
+            type: integer
+          required: true
+          description: Number of hours back for turbulence reports
+        - in: path
+          name: delivery_token
+          schema:
+            type: string
+          required: true
+          description: Delivery token recived in /delivery_token
+        - in: path
+          name: delivery_token_expiry
+          schema:
+            type: integer
+          required: true
+          description: Delivery token expiration as recived in /delivery_token_expiry
+      responses:
+        200:
+          description: OK - returns the world map turbulences and traffic for the last 6 hours
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/InitialResponse"
+        401:
+          $ref: "responses.yml#/Unauthorized"
+        404:
+          $ref: "responses.yml#/NotFound"
+        500:
+          $ref: "responses.yml#/InternalServerError"
+
+  ? /v2/updates/{company_id}/{aircraft_type}/{skypath_tick}/{delivery_token}/{delivery_token_expiry}
+  : get:
+      tags:
+        - map
+      operationId: updates
+      description: |
+        Returns updates since and including "skypath tick" to client, client calls this route 
+        every minute or so to stay in sync with the system updates of traffic positions and 
+        turbulence data
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+        - in: path
+          name: company_id
+          schema:
+            type: string
+            example: "UA"
+          required: true
+          description: Internal Company Id
+        - in: path
+          name: aircraft_type
+          schema:
+            type: string
+            example: "737"
+          required: true
+          description: Type of aircraft client is flying
+        - in: path
+          name: skypath_tick
+          schema:
+            type: integer
+            example: "708695"
+          required: true
+          description: last Skypath tick you got in the last succesfull get /update
+        - in: path
+          name: delivery_token
+          schema:
+            type: string
+            example: "aa"
+          required: true
+          description: Delivery token recived in /delivery_token
+        - in: path
+          name: delivery_token_expiry
+          schema:
+            type: integer
+            example: 1454655656
+          required: true
+          description: Delivery token expiration as recived in /delivery_token_expiry
+
+      responses:
+        200:
+          description: Updates to the map since and including skypath tick
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/UpdateResponse"
+        401:
+          $ref: "responses.yml#/Unauthorized"
+        404:
+          $ref: "responses.yml#/NotFound"
+        500:
+          $ref: "responses.yml#/InternalServerError"
+
+  /v2/updates/:
+    post:
+      tags:
+        - map
+      operationId: updates
+      description: |
+        Client POSTs updates of aircraft position and new turbulence discovered to server every minute or so
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+      security:
+        - bearerAuth: []
+
+      responses:
+        200:
+          description: OK - Updates were recived by the server
+        207:
+          $ref: "responses.yml#/PartialUpdate"
+        401:
+          $ref: "responses.yml#/Unauthorized"
+        404:
+          $ref: "responses.yml#/NotFound"
+        500:
+          $ref: "responses.yml#/InternalServerError"
+
+      requestBody:
+        description: The objects to send from client to server with what changed
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRequestBody"
+
+  /v2/positions/{company_id}/{delivery_token}/{delivery_token_expiry}::
+    get:
+      tags:
+        - map
+      operationId: positions
+      description: |
+        Client get update of all aircrafts positions, can be used for higher frequency traffic updates map if app doesn't support animations or DR positions
+      parameters:
+        - $ref: "./core/headers.yml#/skypathSDK"
+        - $ref: "./core/headers.yml#/skypathApp"
+        - in: path
+          name: company_id
+          schema:
+            type: string
+            example: "UA"
+          required: true
+          description: Internal Company Id
+        - in: path
+          name: delivery_token
+          schema:
+            type: string
+            example: "aa"
+          required: true
+          description: Delivery token recived in /delivery_token
+        - in: path
+          name: delivery_token_expiry
+          schema:
+            type: integer
+            example: 1454655656
+          required: true
+          description: Delivery token expiration as recived in /delivery_token_expiry
+
+      responses:
+        200:
+          description: OK - World map of positions for all aircrafts
+          content:
+            application/json:
+              schema:
+                $ref: "types.yml#/PositionsResponse"
+        401:
+          $ref: "responses.yml#/Unauthorized"
+        404:
+          $ref: "responses.yml#/NotFound"
+        500:
+          $ref: "responses.yml#/InternalServerError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: apiKey
+      name: x-access-token
+      description: JWT non expired token recived in response to a successful login request
+      in: header
+
+    apiKey:
+      type: apiKey
+      name: api-key
+      description: API key to authorize requests. If you don't have a Skypath API key, contact Yamasee support
+      in: header
+
+  schemas:
+    ProxyRequest:
+      description: Options for proxy request
+      type: object
+      properties:
+        url:
+          type: string
+        method:
+          type: string
+          enum: [get, post, delete, patch, put]
+        responseType:
+          type: string
+          enum: [json, stream]
+        data:
+          type: object
+          format: json
+        headers:
+          type: object
+          format: json
+    MetadataByIdResponse:
+      description: Metadata object
+      $ref: "types.yml#/Metadata"
+    UploadRawDataRequest:
+      description: Actual file upload
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        metadata:
+          type: object
+          format: json
+          properties:
+            start_ts:
+              type: number
+            end_ts:
+              type: number
+            flight_num:
+              type: string
+            label:
+              type: string
+            user_response:
+              type: object
+              properties:
+                confirmed:
+                  type: boolean
+                suggested_level:
+                  type: number
+    CreateStaticContentRequest:
+      description: Actual file upload
+      type: object
+      properties:
+        thefile:
+          type: string
+          format: binary
+
+    ContactRequest:
+      description: Body for user contact send message
+      type: object
+      required:
+        - messagee
+      properties:
+        message:
+          description: text message the user wants to send
+          type: string
+        email:
+          description: the users email
+          type: string
+
+    ForgotPasswordRequest:
+      description: Body for frogot password request
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          description: user name or email or requesting user
+          type: string
+
+    PartnerLoginRequest:
+      description: Body for partner login request
+      type: object
+      required:
+        - user_id
+        - company_id
+      properties:
+        user_id:
+          type: string
+        company_id:
+          type: string
+
+    PartnerRefreshTokenRequest:
+      description: Body for partner login request
+      type: object
+      required:
+        - token
+        - user_id
+        - company_id
+      properties:
+        token:
+          type: string
+          description: The refresh token the client recived on login
+        user_id:
+          type: string
+          description: The user_id or the requesting user
+        company_id:
+          type: string
+          description: The company id for the requesting user
+
+    OTPValidationRequest:
+      description: Body for OTP validation
+      type: object
+      required:
+        - otp
+        - token
+      properties:
+        otp:
+          description: the OTP code
+          type: string
+        token:
+          description: the token received from the login request
+          type: string
+
+    OTPRequest:
+      description: Body for OTP request
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          description: the token received from the login request
+          type: string
+
+    LoginRequest:
+      description: Body for login request
+      type: object
+      required:
+        - user_id
+        - password
+      properties:
+        user_id:
+          description: user id or email of user that logs in
+          type: string
+        password:
+          description: clear text password
+          type: string
+
+    UserProfileUpdateRequest:
+      description: Body for user profile update request
+      type: object
+      required:
+        - token
+        - password
+      properties:
+        password:
+          description: new chosen password
+          type: string
+        token:
+          description: the token received from the OTP validation request
+          type: string
+
+    UpdateRequestBody:
+      description: Update request body
+      type: object
+      properties:
+        events:
+          description: App Events that happened since last update
+          $ref: "#/components/schemas/Events"
+        turbulences:
+          description: Turbulence Events that happened since last update
+          $ref: "#/components/schemas/Turbulences"
+        position:
+          description: Position of the aircraft
+          $ref: "#/components/schemas/Position"
+        weather_events:
+          description: Weather Events
+          $ref: "#/components/schemas/WeatherEvents"
+
+    WeatherEvents:
+      description: Weather Events Array
+      type: array
+      items:
+        $ref: "#/components/schemas/WeatherEvent"
+
+    WeatherEvent:
+      description: Body for weathr event
+      allOf:
+        - type: object
+          required:
+            - tileX
+            - tileY
+            - alt
+            - ts
+            - fNum
+            - type
+          properties:
+            tileX:
+              description: turbulence tile x
+              example: 1404
+              type: integer
+            tileY:
+              description: turbulence tile y
+              example: 30
+              type: integer
+            alt:
+              description: alt in tiles
+              example: 12
+              type: integer
+            ts:
+              description: timestamp (unix epoch)
+              example: 140454545
+              type: integer
+            type:
+              description: Weather type 'cb' , 'icing','shear','lightning'
+              example: "cb"
+              type: string
+            fNum:
+              description: Flight Number
+              example: "LY001"
+              type: string
+
+    Events:
+      description: Events Array
+      type: array
+      items:
+        $ref: "#/components/schemas/Event"
+
+    Event:
+      description: Body for event
+      allOf:
+        - type: object
+          required:
+            - ts
+            - type
+            - meta
+          properties:
+            ts:
+              description: timestamp (unix epoch)
+              example: 140454545
+              type: integer
+            type:
+              description: type of events
+              example: "NO_GPS"
+              type: string
+            meta:
+              description: Additional info about the event
+              example: { "size": 8 }
+              type: object
+
+    Turbulences:
+      description: Turbulences Array
+      type: array
+      items:
+        $ref: "#/components/schemas/Turbulence"
+
+    Turbulence:
+      description: Body for turbulence event
+      allOf:
+        - type: object
+          required:
+            - tileX
+            - tileY
+            - alt
+            - lat
+            - lng
+            - altitude
+            - airplane
+            - fNum
+            - ts
+            - sev
+          properties:
+            tileX:
+              description: turbulence tile x
+              example: 1404
+              type: integer
+            tileY:
+              description: turbulence tile y
+              example: 30
+              type: integer
+            alt:
+              description: alt in tiles
+              example: 12
+              type: integer
+            airplane:
+              description: airplane type
+              example: "737"
+              type: string
+            fNum:
+              description: flight id
+              example: "LY001"
+              type: string
+            ts:
+              description: timestamp (unix epoch)
+              example: 140454545
+              type: integer
+            sev:
+              description: severity of turbulence
+              example: 3
+              type: integer
+            lat:
+              description: GPS latitude
+              example: 102.135769726563
+              type: number
+            lng:
+              description: GPS longitude
+              example: 22.135769726563
+              type: number
+            altitude:
+              description: GPS altitude
+              example: 34056
+              type: number
+
+    Position:
+      description: Aircraft Position
+      allOf:
+        - type: object
+          required:
+            - lat
+            - lng
+            - alt
+            - hdg
+            - speed
+            - fNum
+            - airplane
+            - uuid
+          properties:
+            lat:
+              description: latitude
+              example: 102.135769726563
+              type: number
+            lng:
+              description: lontitude
+              example: -78.5674656566
+              type: number
+            alt:
+              description: altitude of aircraft
+              example: 10232.135769726563
+              type: number
+            hdg:
+              description: aircraft heading
+              example: 43.2421875
+              type: number
+            speed:
+              description: aircraft speed
+              example: 146.2100067138672
+              type: number
+            fNum:
+              description: flight id
+              example: "LY001"
+              type: string
+            airplane:
+              description: aircraft type
+              example: "737"
+              type: string
+            uuid:
+              description: unique client identifier
+              example: "x4534dxc"
+              type: string

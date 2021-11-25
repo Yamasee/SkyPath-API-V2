@@ -1,0 +1,26 @@
+Metadata:
+  type: object
+  properties:
+    start_ts:
+      type: number
+    end_ts:
+      type: number
+    flight_num: 
+      type: string
+    label:
+      type: string
+    user_response:
+      type: object
+      properties: 
+        confirmed: 
+          type: boolean
+        suggested_level:
+          type: number
+  example:
+    start_ts: 1607525039
+    end_ts: 1607525039
+    flight_num: "123"
+    label: "event"
+    user_response:
+      confirmed: true
+      suggested_level: 2
